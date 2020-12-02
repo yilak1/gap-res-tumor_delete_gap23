@@ -14,13 +14,37 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
-
+import torch.nn.functional as F
 from tensorboardX import SummaryWriter
 
 from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+
+
+def loss_function1(outputs, labels):
+    # print("type(outputs):",type(outputs))
+    # print("type(labels):",type(labels))
+    y_hat = F.softmax(outputs,dim=1)
+    # print("y_hat:", y_hat.size())
+    max_l = torch.pow(F.relu(0.9 - y_hat),2)
+    # print("max_l:", max_l.size())
+    # max_l = np.reshape(max_l, shape=(-1, 3))
+    max_r = torch.pow(F.relu( y_hat - 0.1),2)
+    # print("max_r:",max_r.size())
+    # max_r = np.reshape(max_r, shape=(-1, 3))
+    labels=torch.unsqueeze(labels,dim=1).cuda()
+    # print(labels.size())
+    # print(labels.size(0))
+    t_c = torch.zeros(outputs.size(0),3).cuda().scatter_(1, labels, 1)
+    # print(t_c)
+    m_loss = t_c * max_l + 0.5 * (1. - t_c) * max_r
+    loss_sum = torch.sum(m_loss, dim=1)
+    loss = torch.mean(loss_sum)
+    # print("loss:",loss.size())
+    return loss
+
 
 def train(epoch):
 
@@ -40,7 +64,7 @@ def train(epoch):
         _, preds = outputs.max(1)
         train_batch_correct += preds.eq(labels).sum()
 
-        loss = loss_function(outputs, labels)
+        loss = loss_function(outputs, labels)  + loss_function1(outputs, labels)
         loss.backward()
         optimizer.step()
 
@@ -86,7 +110,7 @@ def eval_training(epoch):
         labels = labels.cuda()
 
         outputs = net(images)
-        loss = loss_function(outputs, labels)
+        loss = loss_function(outputs, labels) + loss_function1(outputs, labels)
         train_loss += loss.item()
         _, preds = outputs.max(1)
         train_correct += preds.eq(labels).sum()
