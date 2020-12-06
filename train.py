@@ -20,7 +20,8 @@ from tensorboardX import SummaryWriter
 from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+from loss.circle_loss import convert_label_to_similarity, CircleLoss
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 
 def loss_function1(outputs, labels):
@@ -64,7 +65,7 @@ def train(epoch):
         _, preds = outputs.max(1)
         train_batch_correct += preds.eq(labels).sum()
 
-        loss = loss_function(outputs, labels)  + loss_function1(outputs, labels)
+        loss = loss_function(*convert_label_to_similarity(outputs, labels))  + loss_function1(outputs, labels)
         loss.backward()
         optimizer.step()
 
@@ -110,7 +111,7 @@ def eval_training(epoch):
         labels = labels.cuda()
 
         outputs = net(images)
-        loss = loss_function(outputs, labels) + loss_function1(outputs, labels)
+        loss = loss_function(*convert_label_to_similarity(outputs, labels)) + loss_function1(outputs, labels)
         train_loss += loss.item()
         _, preds = outputs.max(1)
         train_correct += preds.eq(labels).sum()
@@ -129,7 +130,10 @@ def eval_training(epoch):
         labels = labels.cuda()
 
         outputs = net(images)
-        loss = loss_function(outputs, labels)
+        print(outputs.size())
+        print(labels.size())
+
+        loss = loss_function(*convert_label_to_similarity(outputs, labels)) + loss_function1(outputs, labels)
         test_loss += loss.item()
         _, preds = outputs.max(1)
         correct += preds.eq(labels).sum()
@@ -175,7 +179,8 @@ if __name__ == '__main__':
         shuffle=args.s
     )
     
-    loss_function = nn.CrossEntropyLoss()
+    # loss_function = nn.CrossEntropyLoss()
+    loss_function = CircleLoss(m = settings.M, gamma=settings.GAMMA)
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
     train_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=np.sqrt(0.1))
     #train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=settings.MILESTONES, gamma=0.2) #learning rate decay

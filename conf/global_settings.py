@@ -34,6 +34,10 @@ LOG_DIR = 'runs'
 #save weights file per SAVE_EPOCH epoch
 SAVE_EPOCH = 10
 
+# Circle Loss
+M = 0.25
+GAMMA = 80
+
 
 
 
