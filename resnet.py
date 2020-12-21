@@ -2,7 +2,7 @@ import torch.nn as nn
 import math
 import torch.utils.model_zoo as model_zoo
 import torch
-__all__ = ['ResNet', 'resnet34', 'resnet101']
+__all__ = ['ResNet', 'resnet34', 'resnet101', 'resnet50']
 
 model_urls = {
     'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
@@ -89,10 +89,10 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=3):
+    def __init__(self, block, layers, num_classes=2):
         self.inplanes = 64
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3,
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
@@ -103,9 +103,9 @@ class ResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.adptpool = nn.AdaptiveAvgPool2d((1, 1))
         self.avgpool = nn.AvgPool2d(7, stride=1)
-        # self.fc = nn.Linear(512 * block.expansion, num_classes)
-        self.fc1 = nn.Linear(576, 600)
-        self.fc2 = nn.Linear(600, num_classes)
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
+        #self.fc1 = nn.Linear(576, 600)
+        #self.fc2 = nn.Linear(600, num_classes)
         #self.fc = nn.Linear(51200, num_classes)
         # 对卷积和与BN层初始化，论文中也提到过
         for m in self.modules():
@@ -144,7 +144,7 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
         #print("conv size", x.size())
         x = self.layer1(x)
-        gapool1 = self.adptpool(x)
+        #gapool1 = self.adptpool(x)
         # print("layer1", x.size())
         x = self.layer2(x)
         #gapool2 = self.adptpool(x)
@@ -153,24 +153,27 @@ class ResNet(nn.Module):
         #gapool3 = self.adptpool(x)
         # print("layer3", x.size())
         x = self.layer4(x)
-        gapool4 = self.adptpool(x)
+        #gapool4 = self.adptpool(x)
         # print("layer4", x.size())
         # print('gappool size', gapool1.size())
-        gapool1 = gapool1.view(gapool1.size(0), -1)
+        #gapool1 = gapool1.view(gapool1.size(0), -1)
         # print("gap1 view size", gapool1.size())
         #gapool2 = gapool2.view(gapool2.size(0), -1)
         #gapool3 = gapool3.view(gapool3.size(0), -1)
-        gapool4 = gapool4.view(gapool4.size(0), -1)
-        x = torch.cat([gapool1,gapool4], dim=1)
+        #gapool4 = gapool4.view(gapool4.size(0), -1)
+        #x = torch.cat([gapool1,gapool4], dim=1)
         # print()
-        x = self.fc1(x)
-        x = self.fc2(x)
-        #x = self.avgpool(x)
+        #x = self.fc1(x)
+        #x = self.fc2(x)
+        x = self.adptpool(x)
         #print("avgpool", x.size())
-        # x = x.view(x.size(0), -1)
-        # x = self.fc(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
 
         return x
+
+
+
 
 
 def resnet34(pretrained=False, modelpath='./models',**kwargs):
@@ -179,6 +182,10 @@ def resnet34(pretrained=False, modelpath='./models',**kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet34'], model_dir=modelpath))
     return model
 
+def resnet50():
+    """ return a ResNet 50 object
+    """
+    return ResNet(Bottleneck, [3, 4, 6, 3])
 
 def resnet101(pretrained=False, modelpath='./models', **kwargs):
     model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)

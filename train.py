@@ -16,14 +16,15 @@ import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter
-
+import torchvision.models as models
 from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader
+from utils import get_ct_train_dataloader, get_ct_val_dataloader, get_ct_test_dataloader
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
-def loss_function1(outputs, labels):
+def loss_function1(outputs, labels, num_classes=2):
     # print("type(outputs):",type(outputs))
     # print("type(labels):",type(labels))
     y_hat = F.softmax(outputs,dim=1)
@@ -37,7 +38,7 @@ def loss_function1(outputs, labels):
     labels=torch.unsqueeze(labels,dim=1).cuda()
     # print(labels.size())
     # print(labels.size(0))
-    t_c = torch.zeros(outputs.size(0),3).cuda().scatter_(1, labels, 1)
+    t_c = torch.zeros(outputs.size(0),num_classes).cuda().scatter_(1, labels, 1)
     # print(t_c)
     m_loss = t_c * max_l + 0.5 * (1. - t_c) * max_r
     loss_sum = torch.sum(m_loss, dim=1)
@@ -56,6 +57,8 @@ def train(epoch):
         images = Variable(images)
         labels = Variable(labels)
 
+        labels = labels.long()
+
         labels = labels.cuda()
         images = images.cuda()
 
@@ -64,7 +67,7 @@ def train(epoch):
         _, preds = outputs.max(1)
         train_batch_correct += preds.eq(labels).sum()
 
-        loss = loss_function(outputs, labels)  + loss_function1(outputs, labels)
+        loss = loss_function(outputs, labels)  #+ loss_function1(outputs, labels)
         loss.backward()
         optimizer.step()
 
@@ -76,7 +79,7 @@ def train(epoch):
                 writer.add_scalar('LastLayerGradients/grad_norm2_weights', para.grad.norm(), n_iter)
             if 'bias' in name:
                 writer.add_scalar('LastLayerGradients/grad_norm2_bias', para.grad.norm(), n_iter)
-        if batch_index % 50 == 49:
+        if batch_index % 2 == 1:
             print('Training Epoch: {epoch} [{trained_samples}/{total_samples}]\tLoss: {:0.4f}\tLR: {:0.6f}'.format(
                 loss.item(),
                 optimizer.param_groups[0]['lr'],
@@ -110,7 +113,7 @@ def eval_training(epoch):
         labels = labels.cuda()
 
         outputs = net(images)
-        loss = loss_function(outputs, labels) + loss_function1(outputs, labels)
+        loss = loss_function(outputs, labels) #+ loss_function1(outputs, labels)
         train_loss += loss.item()
         _, preds = outputs.max(1)
         train_correct += preds.eq(labels).sum()
@@ -154,22 +157,22 @@ if __name__ == '__main__':
     parser.add_argument('-net', type=str, required=True, help='net type')
     parser.add_argument('-gpu', type=bool, default=True, help='use gpu or not')
     parser.add_argument('-w', type=int, default=1, help='number of workers for dataloader')
-    parser.add_argument('-b', type=int, default=25, help='batch size for dataloader')
+    parser.add_argument('-b', type=int, default=10, help='batch size for dataloader')
     parser.add_argument('-s', type=bool, default=True, help='whether shuffle the dataset')
     parser.add_argument('-warm', type=int, default=1, help='warm up training phase')
     parser.add_argument('-lr', type=float, default=0.001, help='initial learning rate')
     args = parser.parse_args()
-
-    net = get_network(args, use_gpu=args.gpu)
+    net = models.resnet50(pretrained=True).cuda()
+    #net = get_network(args, use_gpu=args.gpu)
         
     #data preprocessing:
-    tumor_training_loader = get_training_dataloader(
+    tumor_training_loader = get_ct_train_dataloader(
         num_workers=args.w,
         batch_size=args.b,
         shuffle=args.s
     )
     
-    tumor_test_loader = get_test_dataloader(
+    tumor_test_loader = get_ct_test_dataloader(
         num_workers=args.w,
         batch_size=args.b,
         shuffle=args.s

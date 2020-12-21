@@ -1,8 +1,8 @@
 from data_handler import get_data
 from torch.utils.data import Dataset
 import torch
-DATASET_FOLDER = "dataset/dataset6-4-1"
-dataset = "./dataset/dataset6-4-1"
+DATASET_FOLDER = "../dataset/dataset6-4-1"
+dataset = "../dataset/dataset6-4-1"
 
 X_train, y_train, X_test, y_test = get_data(dataset)
 

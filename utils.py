@@ -14,6 +14,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
 from dataset import TumorTrain, TumorTest
+from ct_dataset import CovidCTDataset
 
 def get_network(args, use_gpu=True):
     """ return given network
@@ -65,7 +66,7 @@ def get_network(args, use_gpu=True):
         from resnet import resnet34
         net = resnet34()
     elif args.net == 'resnet50':
-        from models.resnet import resnet50
+        from resnet import resnet50
         net = resnet50()
     elif args.net == 'resnet101':
         from models.resnet import resnet101
@@ -198,6 +199,54 @@ def get_test_dataloader(batch_size=16, num_workers=2, shuffle=True):
     tumor_test = TumorTest()
     tumor_test_loader = DataLoader(tumor_test, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
     return tumor_test_loader
+
+
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+train_transformer = transforms.Compose([
+    transforms.Resize(256),
+    transforms.RandomResizedCrop((224),scale=(0.5,1.0)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    normalize
+])
+
+val_transformer = transforms.Compose([
+    transforms.Resize(224),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    normalize
+])
+
+
+def get_ct_train_dataloader(batch_size=16, num_workers=2, shuffle=True):
+    trainset = CovidCTDataset(root_dir='/media/disk/lds/dataset/COVID-CT/Images-processed',
+                              txt_COVID='/media/disk/lds/dataset/COVID-CT/Data-split/COVID/trainCT_COVID.txt',
+                              txt_NonCOVID='/media/disk/lds/dataset/COVID-CT/Data-split/NonCOVID/trainCT_NonCOVID.txt',
+                              transform=train_transformer)
+    print(trainset.__len__())
+    train_loader = DataLoader(trainset, batch_size=batch_size, drop_last=False, shuffle=shuffle, num_workers=num_workers)
+    return train_loader
+
+
+def get_ct_val_dataloader(batch_size=16, num_workers=2, shuffle=False):
+    valset = CovidCTDataset(root_dir='/media/disk/lds/dataset/COVID-CT/Images-processed',
+                            txt_COVID='/media/disk/lds/dataset/COVID-CT/Data-split/COVID/valCT_COVID.txt',
+                            txt_NonCOVID='/media/disk/lds/dataset/COVID-CT/Data-split/NonCOVID/valCT_NonCOVID.txt',
+                            transform=val_transformer)
+    print(valset.__len__())
+    val_loader = DataLoader(valset, batch_size=batch_size, drop_last=False, shuffle=shuffle, num_workers=num_workers)
+    return val_loader
+
+
+def get_ct_test_dataloader(batch_size=16, num_workers=2, shuffle=False):
+    testset = CovidCTDataset(root_dir='/media/disk/lds/dataset/COVID-CT/Images-processed',
+                             txt_COVID='/media/disk/lds/dataset/COVID-CT/Data-split/COVID/testCT_COVID.txt',
+                             txt_NonCOVID='/media/disk/lds/dataset/COVID-CT/Data-split/NonCOVID/testCT_NonCOVID.txt',
+                             transform=val_transformer)
+    print(testset.__len__())
+    test_loader = DataLoader(testset, batch_size=batch_size, drop_last=False, shuffle=shuffle, num_workers=num_workers)
+    return test_loader
+
 
 def compute_mean_std(cifar100_dataset):
     """compute the mean and std of cifar100 dataset
