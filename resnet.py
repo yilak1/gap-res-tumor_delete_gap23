@@ -2,6 +2,7 @@ import torch.nn as nn
 import math
 import torch.utils.model_zoo as model_zoo
 import torch
+from .triplet_attention import *
 __all__ = ['ResNet', 'resnet34', 'resnet101', 'resnet50']
 
 model_urls = {
@@ -28,6 +29,7 @@ class BasicBlock(nn.Module):
         self.bn2 = nn.BatchNorm2d(planes)
         self.downsample = downsample
         self.stride = stride
+        self.triplet_attention = TripletAttention(planes, 16)
 
     def forward(self, x):
         residual = x
@@ -41,7 +43,7 @@ class BasicBlock(nn.Module):
 
         if self.downsample is not None:
             residual = self.downsample(x)
-
+        out = self.triplet_attention(out)
         out += residual
         out = self.relu(out)
 
