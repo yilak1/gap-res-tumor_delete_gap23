@@ -32,7 +32,7 @@ class CovidCTDataset(Dataset):
         """
         self.root_dir = root_dir
         self.txt_path = [txt_COVID,txt_NonCOVID]
-        self.classes = ['CT_COVID', 'CT_NonCOVID']
+        self.classes = ['COVID', 'non-COVID']
         self.num_cls = len(self.classes)
         self.img_list = []
         for c in range(self.num_cls):

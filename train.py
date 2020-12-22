@@ -67,7 +67,7 @@ def train(epoch):
         _, preds = outputs.max(1)
         train_batch_correct += preds.eq(labels).sum()
 
-        loss = loss_function(outputs, labels)  #+ loss_function1(outputs, labels)
+        loss = loss_function(outputs, labels)  + loss_function1(outputs, labels)
         loss.backward()
         optimizer.step()
 
@@ -113,7 +113,7 @@ def eval_training(epoch):
         labels = labels.cuda()
 
         outputs = net(images)
-        loss = loss_function(outputs, labels) #+ loss_function1(outputs, labels)
+        loss = loss_function(outputs, labels) + loss_function1(outputs, labels)
         train_loss += loss.item()
         _, preds = outputs.max(1)
         train_correct += preds.eq(labels).sum()
@@ -157,13 +157,13 @@ if __name__ == '__main__':
     parser.add_argument('-net', type=str, required=True, help='net type')
     parser.add_argument('-gpu', type=bool, default=True, help='use gpu or not')
     parser.add_argument('-w', type=int, default=1, help='number of workers for dataloader')
-    parser.add_argument('-b', type=int, default=10, help='batch size for dataloader')
+    parser.add_argument('-b', type=int, default=25, help='batch size for dataloader')
     parser.add_argument('-s', type=bool, default=True, help='whether shuffle the dataset')
     parser.add_argument('-warm', type=int, default=1, help='warm up training phase')
     parser.add_argument('-lr', type=float, default=0.001, help='initial learning rate')
     args = parser.parse_args()
-    net = models.resnet50(pretrained=True).cuda()
-    #net = get_network(args, use_gpu=args.gpu)
+    #net = models.resnet34(pretrained=False).cuda()
+    net = get_network(args, use_gpu=args.gpu)
         
     #data preprocessing:
     tumor_training_loader = get_ct_train_dataloader(

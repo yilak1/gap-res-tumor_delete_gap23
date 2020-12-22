@@ -219,9 +219,9 @@ val_transformer = transforms.Compose([
 
 
 def get_ct_train_dataloader(batch_size=16, num_workers=2, shuffle=True):
-    trainset = CovidCTDataset(root_dir='/media/disk/lds/dataset/COVID-CT/Images-processed',
-                              txt_COVID='/media/disk/lds/dataset/COVID-CT/Data-split/COVID/trainCT_COVID.txt',
-                              txt_NonCOVID='/media/disk/lds/dataset/COVID-CT/Data-split/NonCOVID/trainCT_NonCOVID.txt',
+    trainset = CovidCTDataset(root_dir='/media/disk/lds/dataset/SARS-CoV-2-CT/archive',
+                              txt_COVID='/media/disk/lds/dataset/SARS-CoV-2-CT/archive/data-split/COVID/train_covid.txt',
+                              txt_NonCOVID='/media/disk/lds/dataset/SARS-CoV-2-CT/archive/data-split/non-COVID/train_non_covid.txt',
                               transform=train_transformer)
     print(trainset.__len__())
     train_loader = DataLoader(trainset, batch_size=batch_size, drop_last=False, shuffle=shuffle, num_workers=num_workers)
@@ -229,9 +229,9 @@ def get_ct_train_dataloader(batch_size=16, num_workers=2, shuffle=True):
 
 
 def get_ct_val_dataloader(batch_size=16, num_workers=2, shuffle=False):
-    valset = CovidCTDataset(root_dir='/media/disk/lds/dataset/COVID-CT/Images-processed',
-                            txt_COVID='/media/disk/lds/dataset/COVID-CT/Data-split/COVID/valCT_COVID.txt',
-                            txt_NonCOVID='/media/disk/lds/dataset/COVID-CT/Data-split/NonCOVID/valCT_NonCOVID.txt',
+    valset = CovidCTDataset(root_dir='/media/disk/lds/dataset/SARS-CoV-2-CT/archive',
+                            txt_COVID='/media/disk/lds/dataset/SARS-CoV-2-CT/archive/data-split/COVID/test_covid.txt',
+                            txt_NonCOVID='/media/disk/lds/dataset/SARS-CoV-2-CT/archive/data-split/non-COVID/test_non_covid.txt',
                             transform=val_transformer)
     print(valset.__len__())
     val_loader = DataLoader(valset, batch_size=batch_size, drop_last=False, shuffle=shuffle, num_workers=num_workers)
@@ -239,10 +239,10 @@ def get_ct_val_dataloader(batch_size=16, num_workers=2, shuffle=False):
 
 
 def get_ct_test_dataloader(batch_size=16, num_workers=2, shuffle=False):
-    testset = CovidCTDataset(root_dir='/media/disk/lds/dataset/COVID-CT/Images-processed',
-                             txt_COVID='/media/disk/lds/dataset/COVID-CT/Data-split/COVID/testCT_COVID.txt',
-                             txt_NonCOVID='/media/disk/lds/dataset/COVID-CT/Data-split/NonCOVID/testCT_NonCOVID.txt',
-                             transform=val_transformer)
+    testset = CovidCTDataset(root_dir='/media/disk/lds/dataset/SARS-CoV-2-CT/archive',
+                            txt_COVID='/media/disk/lds/dataset/SARS-CoV-2-CT/archive/data-split/COVID/test_covid.txt',
+                            txt_NonCOVID='/media/disk/lds/dataset/SARS-CoV-2-CT/archive/data-split/non-COVID/test_non_covid.txt',
+                            transform=val_transformer)
     print(testset.__len__())
     test_loader = DataLoader(testset, batch_size=batch_size, drop_last=False, shuffle=shuffle, num_workers=num_workers)
     return test_loader
