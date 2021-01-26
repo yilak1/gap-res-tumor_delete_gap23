@@ -21,7 +21,7 @@ from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader
 from utils import get_ct_train_dataloader, get_ct_val_dataloader, get_ct_test_dataloader
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 def loss_function1(outputs, labels, num_classes=2):
