@@ -2,7 +2,8 @@ import torch.nn as nn
 import math
 import torch.utils.model_zoo as model_zoo
 import torch
-from .triplet_attention import *
+from triplet_attention import *
+from MyNet import *
 __all__ = ['ResNet', 'resnet34', 'resnet101', 'resnet50']
 
 model_urls = {
@@ -17,6 +18,24 @@ def conv3x3(in_planes, out_planes, stride=1):
                      padding=1, bias=False)
 
 
+class SEModule(nn.Module):
+    def __init__(self, channels, reduction=16):
+        super(SEModule, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1, padding=0)
+        self.relu = nn.ReLU(inplace=True)
+        self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1, padding=0)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, input):
+        x = self.avg_pool(input)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        x = self.sigmoid(x)
+        return input * x
+
+
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -29,8 +48,8 @@ class BasicBlock(nn.Module):
         self.bn2 = nn.BatchNorm2d(planes)
         self.downsample = downsample
         self.stride = stride
-        self.triplet_attention = TripletAttention(planes, 16)
-
+        self.triplet_attention = TripletAttention(planes, 16, no_spatial=True)
+        self.se = SEModule(planes * self.expansion)
     def forward(self, x):
         residual = x
 
@@ -104,6 +123,9 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.adptpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.aam1 = AAM(64)
+        self.aam2 = AAM(128)
+        self.aam3 = AAM(256)
         self.avgpool = nn.AvgPool2d(7, stride=1)
         #self.fc = nn.Linear(512 * block.expansion, num_classes)
         self.fc1 = nn.Linear(576, num_classes)
@@ -147,11 +169,14 @@ class ResNet(nn.Module):
         #print("conv size", x.size())
         x = self.layer1(x)
         gapool1 = self.adptpool(x)
+        x = self.aam1(x)
         # print("layer1", x.size())
         x = self.layer2(x)
         #gapool2 = self.adptpool(x)
         # print("layer2", x.size())
+        x = self.aam2(x)
         x = self.layer3(x)
+        x = self.aam3(x)
         #gapool3 = self.adptpool(x)
         # print("layer3", x.size())
         x = self.layer4(x)
